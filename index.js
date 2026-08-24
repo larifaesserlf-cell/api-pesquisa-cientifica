@@ -1,7 +1,11 @@
 const express = require('express');
 const axios = require('axios');
+require('dotenv').config();
+const { createClient } = require('@supabase/supabase-js');
+
 const app = express();
 const PORT = 3000;
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 app.get('/', (req, res) => {
   res.send('API de pesquisa cientifica rodando!');
@@ -36,6 +40,11 @@ app.get('/buscar', async (req, res) => {
         link: `https://pubmed.ncbi.nlm.nih.gov/${id}/`,
       };
     });
+
+    const { error: erroSupabase } = await supabase.from('buscas').insert({ tema, resultado: artigos });
+    if (erroSupabase) {
+      console.error('Erro ao salvar no Supabase:', erroSupabase);
+    }
 
     res.json({ tema, total: artigos.length, artigos });
   } catch (erro) {
