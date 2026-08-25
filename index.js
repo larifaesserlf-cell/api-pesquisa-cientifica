@@ -2,10 +2,14 @@ const express = require('express');
 const axios = require('axios');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const PORT = 3000;
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+app.use(express.json()); // permite o Express ler corpo de requisicao em JSON
 
 app.get('/', (req, res) => {
   res.send('API de pesquisa cientifica rodando!');
@@ -51,6 +55,78 @@ app.get('/buscar', async (req, res) => {
     console.error(erro);
     res.status(500).json({ erro: 'Falha ao buscar artigos' });
   }
+});
+
+app.post('/registrar', async (req, res) => {
+  try {
+    const { email, senha } = req.body;
+    if (!email || !senha) {
+      return res.status(400).json({ erro: 'informe email e senha' });
+    }
+
+    const senhaHash = await bcrypt.hash(senha, 10);
+
+    const { error } = await supabase.from('usuarios').insert({ email, senha_hash: senhaHash });
+    if (error) {
+      return res.status(500).json({ erro: 'nao foi possivel registrar', detalhe: error.message });
+    }
+
+    res.status(201).json({ mensagem: 'usuario registrado com sucesso' });
+  } catch (erro) {
+    console.error(erro);
+    res.status(500).json({ erro: 'falha ao registrar' });
+  }
+});
+
+app.post('/login', async (req, res) => {
+  try {
+    const { email, senha } = req.body;
+    if (!email || !senha) {
+      return res.status(400).json({ erro: 'informe email e senha' });
+    }
+
+    const { data: usuario, error } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error || !usuario) {
+      return res.status(401).json({ erro: 'email ou senha invalidos' });
+    }
+
+    const senhaConfere = await bcrypt.compare(senha, usuario.senha_hash);
+    if (!senhaConfere) {
+      return res.status(401).json({ erro: 'email ou senha invalidos' });
+    }
+
+    const token = jwt.sign({ id: usuario.id, email: usuario.email }, process.env.JWT_SECRET, { expiresIn: '8h' });
+
+    res.json({ token });
+  } catch (erro) {
+    console.error(erro);
+    res.status(500).json({ erro: 'falha ao fazer login' });
+  }
+});
+
+function autenticar(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ erro: 'token nao fornecido' });
+  }
+
+  const token = authHeader.split(' ')[1]; // formato: "Bearer <token>"
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    req.usuario = payload;
+    next();
+  } catch (erro) {
+    return res.status(401).json({ erro: 'token invalido' });
+  }
+}
+
+app.get('/perfil', autenticar, (req, res) => {
+  res.json({ mensagem: 'autenticado com sucesso', usuario: req.usuario });
 });
 
 app.listen(PORT, () => {
