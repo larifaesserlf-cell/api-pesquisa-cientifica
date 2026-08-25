@@ -129,6 +129,63 @@ app.get('/perfil', autenticar, (req, res) => {
   res.json({ mensagem: 'autenticado com sucesso', usuario: req.usuario });
 });
 
+app.post('/favoritos', autenticar, async (req, res) => {
+  try {
+    const { pmid, titulo, link } = req.body;
+    if (!pmid || !titulo || !link) {
+      return res.status(400).json({ erro: 'informe pmid, titulo e link' });
+    }
+
+    const usuarioId = req.usuario.id;
+
+    // Verifica se ja existe esse favorito pra esse usuario
+    const { data: existente } = await supabase
+      .from('favoritos')
+      .select('id')
+      .eq('usuario_id', usuarioId)
+      .eq('pmid', pmid)
+      .maybeSingle();
+
+    if (existente) {
+      return res.status(409).json({ erro: 'artigo ja favoritado' });
+    }
+
+    const { error } = await supabase
+      .from('favoritos')
+      .insert({ usuario_id: usuarioId, pmid, titulo, link });
+
+    if (error) {
+      return res.status(500).json({ erro: 'nao foi possivel favoritar', detalhe: error.message });
+    }
+
+    res.status(201).json({ mensagem: 'artigo favoritado com sucesso' });
+  } catch (erro) {
+    console.error(erro);
+    res.status(500).json({ erro: 'falha ao favoritar artigo' });
+  }
+});
+
+app.get('/favoritos', autenticar, async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+
+    const { data, error } = await supabase
+      .from('favoritos')
+      .select('*')
+      .eq('usuario_id', usuarioId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ erro: 'nao foi possivel listar favoritos' });
+    }
+
+    res.json({ total: data.length, favoritos: data });
+  } catch (erro) {
+    console.error(erro);
+    res.status(500).json({ erro: 'falha ao listar favoritos' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
