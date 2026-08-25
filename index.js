@@ -9,7 +9,7 @@ const app = express();
 const PORT = 3000;
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-app.use(express.json()); // permite o Express ler corpo de requisicao em JSON
+app.use(express.json());
 
 app.get('/', (req, res) => {
   res.send('API de pesquisa cientifica rodando!');
@@ -115,7 +115,7 @@ function autenticar(req, res, next) {
     return res.status(401).json({ erro: 'token nao fornecido' });
   }
 
-  const token = authHeader.split(' ')[1]; // formato: "Bearer <token>"
+  const token = authHeader.split(' ')[1];
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     req.usuario = payload;
@@ -138,7 +138,6 @@ app.post('/favoritos', autenticar, async (req, res) => {
 
     const usuarioId = req.usuario.id;
 
-    // Verifica se ja existe esse favorito pra esse usuario
     const { data: existente } = await supabase
       .from('favoritos')
       .select('id')
@@ -186,6 +185,10 @@ app.get('/favoritos', autenticar, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
-});
+module.exports = app;
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando em http://localhost:${PORT}`);
+  });
+}
