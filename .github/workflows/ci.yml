@@ -28,3 +28,12 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Disparar deploy no Render
+        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
