@@ -25,6 +25,8 @@ jobs:
       - name: Rodar testes
         run: npm test
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          SUPABASE_URL: ${{ https://macqnjohigrqnuzwlzak.supabase.co }}
+          SUPABASE_KEY: ${{ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hY3Fuam9oaWdycW51endsemFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1NjkyNDAsImV4cCI6MjEwMzE0NTI0MH0.r6IYdxAzhVnKowsycih7QIZ_iWbidABJ42-fKHcw3-c
+ }}
+          JWT_SECRET: ${{ osanimaissaoasmelhorescriaturasdomundo
+ }}
